@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * This component exposes rolling statistics via Restful interface. There is a number of workers constantly refreshing
+ * This component exposes rolling statistics via Restful interface. There is a worker constantly refreshing
  * response to be returned. This is why get() method runs in O(1).
  *
  * @author Andrew Polyakov
@@ -26,34 +26,47 @@ import java.util.concurrent.Executors;
 @Path("/statistics")
 public class StatisticsEndpoint {
 
-    private final ExecutorService e = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2 + 1);
+    private final ExecutorService e = Executors.newSingleThreadExecutor();
 
     public Deque<StatisticsDto> response =  new ConcurrentLinkedDeque<>();
 
     /**
-     * The smaller the refreshInterval the sooner workers replace result. Set this to something positive smaller than your window.
+     * The smaller the refreshInterval the sooner worker replaces data. Set this to something positive significantly
+     * smaller than your window for optimal performance.
      */
     @Inject
     public StatisticsEndpoint(final Integer refreshInterval, @Qualifier("rollingStatistics") final N26RollingStatistics rs) {
         N26RollingStatistics.AggregatedStatistics initial = rs.getRolling();
-        response.offerFirst(new StatisticsDto(initial.getSize(), initial.getMin(), initial.getMax(), initial.getAvg(), initial.getSum()));
+        response.offerFirst(new StatisticsDto(initial.getSize(), // this is to ensure there is at least one value at all times
+                initial.getMin(),
+                initial.getMax(),
+                initial.getAvg(),
+                initial.getSum()));
         e.submit(() -> {
                 while(true) {
                     /**
-                     * To update statics more frequently and account for race condition. Worker continuously refresh
-                     * statistics. Queue is required to maintain visibility.
+                     * To update statistics on a set interval. Worker continuously refreshes
+                     * statistics. Queue is required to maintain visibility and ensure there is always a value.
                      */
                     Thread.sleep(refreshInterval);
                     N26RollingStatistics.AggregatedStatistics rollOut = rs.getRolling();
-                    response.offerFirst(new StatisticsDto(rollOut.getSize(), rollOut.getMin(), rollOut.getMax(), rollOut.getAvg(), rollOut.getSum()));
-                    response.removeLast();// this is to ensure there is at least one value at all times
+                    response.offerFirst(new StatisticsDto(rollOut.getSize(), // put the latest data at the first position
+                            rollOut.getMin(),
+                            rollOut.getMax(),
+                            rollOut.getAvg(),
+                            rollOut.getSum()));
+                    response.removeLast(); // remove outdated object
                 }
         });
     }
 
+    /**
+     * This method exposes statistics to readers.
+     * @return latest computed result, not necessarily an up to date snapshot though.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public StatisticsDto get() {
-        return response.getFirst(); // This runs in O(1)
+        return response.getFirst(); // This runs in O(1) as everything is precomputed.
     }
 }
