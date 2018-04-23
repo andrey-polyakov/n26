@@ -5,6 +5,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+/**
+ * Restful API error handler.
+ */
 @Provider
 public class AppExceptionMapper implements ExceptionMapper<Exception> {
 

@@ -6,7 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
- * CAS based primitive for summations.
+ * CAS based primitive for summations.Based on LongAdder from Hystrix.
  *
  * @author Andrew Polyakov
  */

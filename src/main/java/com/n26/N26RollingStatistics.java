@@ -32,7 +32,13 @@ import static java.lang.StrictMath.max;
 import static java.lang.StrictMath.min;
 
 /**
- * Some adjustment were made as per N26 requirements.
+ * Time aware rolling statistics. Thread safe, uses custom CAS based primitives. Some functionality borrowed from
+ * Netflix stack, other things added and adjusted.
+ *
+ *<br>
+ * Specifically, inspiration for this class is the class called HystrixRollingNumber from Hystrix framework.
+ *
+ * @author Andrew Polyakov
  *
  */
 public class N26RollingStatistics {

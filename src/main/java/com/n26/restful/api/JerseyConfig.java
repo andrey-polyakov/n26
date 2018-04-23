@@ -3,6 +3,11 @@ package com.n26.restful.api;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.stereotype.Component;
 
+/**
+ * Jersey general piping goes below.
+ *
+ * @author Andrew Polyakoc
+ */
 @Component
 public class JerseyConfig extends ResourceConfig {
 

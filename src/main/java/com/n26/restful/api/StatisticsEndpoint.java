@@ -46,7 +46,7 @@ public class StatisticsEndpoint {
                     Thread.sleep(refreshInterval);
                     N26RollingStatistics.AggregatedStatistics rollOut = rs.getRolling();
                     response.offerFirst(new StatisticsDto(rollOut.getSize(), rollOut.getMin(), rollOut.getMax(), rollOut.getAvg(), rollOut.getSum()));
-                    response.removeLast();
+                    response.removeLast();// this is to ensure there is at least one value at all times
                 }
         });
     }

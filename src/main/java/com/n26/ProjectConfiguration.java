@@ -6,6 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
+/*
+Spring configuration
+ */
 @PropertySource("classpath:config.properties")
 @Configuration("ProjectConfiguration")
 public class ProjectConfiguration {

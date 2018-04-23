@@ -27,6 +27,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 
+/**
+ * Primitive minimum value aggregator based on CAS. Based on LongMaxUpdater from Hystrix.
+ *
+ * @author Andrew Polyakov
+ */
 public class DoubleMin extends N26DoublePrimitive implements Serializable {
 
     /**

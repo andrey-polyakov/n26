@@ -26,6 +26,8 @@ package com.n26.primitive;
 import java.util.Random;
 
 /**
+ * Main CAS logic borrowed from Hystrix and adjusted.
+ * <br>
  * A package-local class holding common representation and mechanics
  * for classes supporting dynamic striping on 64bit values. The class
  * extends Number so that concrete subclasses must publicly do so.
