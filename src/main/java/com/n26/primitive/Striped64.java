@@ -106,12 +106,12 @@ abstract class Striped64 extends Number {
      */
     static final class Cell {
         volatile long p0, p1, p2, p3, p4, p5, p6;
-        volatile long value;
+        volatile Double value;
         volatile long q0, q1, q2, q3, q4, q5, q6;
-        Cell(long x) { value = x; }
+        Cell(Double x) { value = x; }
 
-        final boolean cas(long cmp, long val) {
-            return UNSAFE.compareAndSwapLong(this, valueOffset, cmp, val);
+        final boolean cas(Double cmp, Double val) {
+            return UNSAFE.compareAndSwapObject(this, valueOffset, cmp, val);
         }
 
         // Unsafe mechanics
@@ -170,7 +170,7 @@ abstract class Striped64 extends Number {
      * Base value, used mainly when there is no contention, but also as
      * a fallback during table initialization races. Updated via CAS.
      */
-    transient volatile long base;
+    transient volatile Double base;
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating Cells.
@@ -186,15 +186,15 @@ abstract class Striped64 extends Number {
     /**
      * CASes the base field.
      */
-    final boolean casBase(long cmp, long val) {
-        return UNSAFE.compareAndSwapLong(this, baseOffset, cmp, val);
+    final boolean casBase(Double cmp, Double val) {
+        return UNSAFE.compareAndSwapObject(this, baseOffset, cmp, val);
     }
 
     /**
      * CASes the busy field from 0 to 1 to acquire lock.
      */
     final boolean casBusy() {
-        return UNSAFE.compareAndSwapInt(this, busyOffset, 0, 1);
+        return UNSAFE.compareAndSwapObject(this, busyOffset, 0, 1);
     }
 
     /**
@@ -206,7 +206,7 @@ abstract class Striped64 extends Number {
      * @param newValue the argument from a user update call
      * @return result of the update function
      */
-    abstract long fn(long currentValue, long newValue);
+    abstract double fn(Double currentValue, Double newValue);
 
     /**
      * Handles cases of updates involving initialization, resizing,
@@ -219,11 +219,11 @@ abstract class Striped64 extends Number {
      * @param hc the hash code holder
      * @param wasUncontended false if CAS failed before call
      */
-    final void retryUpdate(long x, HashCode hc, boolean wasUncontended) {
+    final void retryUpdate(Double x, HashCode hc, boolean wasUncontended) {
         int h = hc.code;
         boolean collide = false;                // True if last slot nonempty
         for (;;) {
-            Cell[] as; Cell a; int n; long v;
+            Cell[] as; Cell a; int n; Double v;
             if ((as = cells) != null && (n = as.length) > 0) {
                 if ((a = as[(n - 1) & h]) == null) {
                     if (busy == 0) {            // Try to attach new Cell

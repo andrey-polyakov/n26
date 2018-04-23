@@ -14,10 +14,12 @@ package com.n26;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.n26.primitive.LongMax;
-import com.n26.primitive.LongMin;
-import com.n26.primitive.LongSum;
 
+import com.n26.primitive.DoubleMax;
+import com.n26.primitive.DoubleMin;
+import com.n26.primitive.DoubleSum;
+
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +31,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.lang.StrictMath.max;
 import static java.lang.StrictMath.min;
 
+/**
+ * Some adjustment were made as per N26 requirements.
+ *
+ */
 public class N26RollingStatistics {
 
     private static final N26RollingStatistics.Time ACTUAL_TIME = new N26RollingStatistics.ActualTime();
@@ -57,21 +63,28 @@ public class N26RollingStatistics {
         buckets = new N26RollingStatistics.BucketCircularArray(numberOfBuckets);
     }
 
-    public void addValue(Long value) {
-        getCurrentBucket().max.update(value);
-        getCurrentBucket().min.update(value);
-        getCurrentBucket().sum.add(value);
-        getCurrentBucket().count.add(1);
+    public boolean addValue(Double value, Long timestamp) {
+        long windowToCapture = time.getCurrentTimeInMillis() - timeInMilliseconds;
+
+        if (new Timestamp(timestamp).after(new Timestamp(windowToCapture))) {
+            addValue(value);
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    public void addValue(int value) {
-        addValue((long) value);
+    public void addValue(Double value) {
+        Bucket bucket = getCurrentBucket();
+        bucket.max.update(value);
+        bucket.min.update(value);
+        bucket.sum.add(value);
+        bucket.count.add(1.0);
     }
 
-
-        /**
-         * Force a reset of all rolling counters (clear all buckets) so that statistics start being gathered from scratch.
-         */
+    /**
+     * Force a reset of all rolling counters (clear all buckets) so that statistics start being gathered from scratch.
+     */
     public void reset() {
         buckets.clear();
     }
@@ -79,15 +92,29 @@ public class N26RollingStatistics {
     public static final AggregatedStatistics EMPTY = new AggregatedStatistics(0, 0, 0, 0);
 
 
+    /**
+     * This is key method which produces rolling statistics. It aggregates numbers from all the buckets.
+     * Each bucket represents a time frame.
+     *
+     *<br>
+     * Please note when under contention the numbers will lag. Eventually things will align with reality.
+     *
+     * @return POJO with statistics for current window
+     */
     public AggregatedStatistics getRolling() {
         N26RollingStatistics.Bucket lastBucket = getCurrentBucket();
         if (lastBucket == null)
             return EMPTY;
-        long sum = 0;
-        Long min = null;
-        Long max = null;
+        Double sum = 0.0;
+        Double min = null;
+        Double max = null;
         long size = 0;
         for (N26RollingStatistics.Bucket b : buckets) {
+            double sizeOfThisBucket = b.count.aggregate();
+            if (sizeOfThisBucket < 1) {
+                continue;// Empty one, skip it
+            }
+            size += sizeOfThisBucket;
             sum += b.sum.aggregate();
             if (max == null) {
                 max = b.max.aggregate();
@@ -99,7 +126,6 @@ public class N26RollingStatistics {
             } else {
                 min = min(min, b.min.aggregate());
             }
-            size += b.count.aggregate();
         }
         if (size == 0) {
             return EMPTY;
@@ -107,14 +133,19 @@ public class N26RollingStatistics {
         return new AggregatedStatistics(size, sum, min, max);
     }
 
+    /**
+     * This is just a POJO with aggregated values.
+     *
+     * @author Andrew Polyakov
+     */
     public static class AggregatedStatistics {
         final long size;
-        final long sum;
+        final double sum;
         final double avg;
-        final long min;
-        final long max;
+        final double min;
+        final double max;
 
-        public AggregatedStatistics(long size, long sum, long min, long max) {
+        public AggregatedStatistics(long size, double sum, double min, double max) {
             this.size = size;
             this.sum = sum;
             this.min = min;
@@ -130,7 +161,7 @@ public class N26RollingStatistics {
             return size;
         }
 
-        public long getSum() {
+        public double getSum() {
             return sum;
         }
 
@@ -138,11 +169,11 @@ public class N26RollingStatistics {
             return avg;
         }
 
-        public long getMin() {
+        public double getMin() {
             return min;
         }
 
-        public long getMax() {
+        public double getMax() {
             return max;
         }
     }
@@ -260,29 +291,33 @@ public class N26RollingStatistics {
      */
     /* package */public static class Bucket {
         final long windowStart;
-        final LongMax max = new LongMax();
-        final LongSum sum = new LongSum();
-        final LongMin min = new LongMin();
-        final LongSum count = new LongSum();
+        final DoubleMax max = new DoubleMax();
+        final DoubleSum sum = new DoubleSum();
+        final DoubleMin min = new DoubleMin();
+        final DoubleSum count = new DoubleSum();
 
         Bucket(long startTime) {
             this.windowStart = startTime;
         }
 
-        LongMax getMax() {
+        DoubleMax getMax() {
             return max;
         }
 
-        LongSum getSum() {
+        DoubleSum getSum() {
             return sum;
         }
 
-        LongMin getMin() {
+        DoubleMin getMin() {
             return min;
         }
 
-        public LongSum getCount() {
+        public DoubleSum getCount() {
             return count;
+        }
+
+        public long getWindowStart() {
+            return windowStart;
         }
     }
 
@@ -344,7 +379,7 @@ public class N26RollingStatistics {
                  * but since we never clear the data directly, only increment/decrement head/tail we would never get a NULL
                  * just potentially return stale data which we are okay with doing
                  */
-                ArrayList<N26RollingStatistics.Bucket> array = new ArrayList<N26RollingStatistics.Bucket>();
+                ArrayList<N26RollingStatistics.Bucket> array = new ArrayList<>();
                 for (int i = 0; i < size; i++) {
                     array.add(data.get(convert(i)));
                 }
@@ -363,7 +398,7 @@ public class N26RollingStatistics {
             }
 
             public N26RollingStatistics.BucketCircularArray.ListState clear() {
-                return new N26RollingStatistics.BucketCircularArray.ListState(new AtomicReferenceArray<N26RollingStatistics.Bucket>(dataLength), 0, 0);
+                return new N26RollingStatistics.BucketCircularArray.ListState(new AtomicReferenceArray<>(dataLength), 0, 0);
             }
 
             public N26RollingStatistics.BucketCircularArray.ListState addBucket(N26RollingStatistics.Bucket b) {
@@ -399,7 +434,7 @@ public class N26RollingStatistics {
         public void clear() {
             while (true) {
                 /*
-                 * it should be very hard to not succeed the first pass thru since this is typically is only called from
+                 * it should be very hard to not succeed the first pass through since this is typically is only called from
                  * a single thread protected by a tryLock, but there is at least 1 other place (at time of writing this comment)
                  * where reset can be called from (CircuitBreaker.markSuccess after circuit was tripped) so it can
                  * in an edge-case conflict.
@@ -411,6 +446,7 @@ public class N26RollingStatistics {
                  * The rare scenario in which that would occur, we'll accept the possible data loss while clearing it
                  * since the code has stated its desire to clear() anyways.
                  */
+                //TODO cover with tests
                 N26RollingStatistics.BucketCircularArray.ListState current = state.get();
                 N26RollingStatistics.BucketCircularArray.ListState newState = current.clear();
                 if (state.compareAndSet(current, newState)) {

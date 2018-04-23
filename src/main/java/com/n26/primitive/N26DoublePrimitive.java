@@ -2,26 +2,29 @@ package com.n26.primitive;
 
 import java.io.Serializable;
 
-public abstract class N26Primitive extends Striped64 implements Serializable {
+/**
+ * Basic primitive.
+ */
+public abstract class N26DoublePrimitive extends Striped64 implements Serializable {
 
 
-    protected abstract long fn(long v, long x);
+    protected abstract double fn(Double v, Double x);
 
     /**
      * Returns the String representation of the {@link #aggregate}.
      * @return the String representation of the {@link #aggregate}
      */
     public String toString() {
-        return Long.toString(aggregate());
+        return Double.toString(aggregate());
     }
 
     /**
      * Equivalent to {@link #aggregate}.
      *
-     * @return the maximum
+     * @return the aggregate
      */
     public long longValue() {
-        return aggregate();
+        return (long) aggregate();
     }
 
     /**
@@ -45,15 +48,15 @@ public abstract class N26Primitive extends Striped64 implements Serializable {
      * primitive conversion.
      */
     public double doubleValue() {
-        return (double) aggregate();
+        return aggregate();
     }
 
-    public abstract long aggregate();
+    public abstract double aggregate();
 
     /**
      * Sets base and all cells to the given value.
      */
-    public final void internalReset(long initialValue) {
+    public final void internalReset(double initialValue) {
         Cell[] as = cells;
         base = initialValue;
         if (as != null) {
@@ -74,9 +77,9 @@ public abstract class N26Primitive extends Striped64 implements Serializable {
      * <em>not</em> guaranteed to be the final value occurring before
      * the reset.
      *
-     * @return the maximum
+     * @return the aggregate
      */
-    public abstract long getThenReset();
+    public abstract double getThenReset();
 
     /**
      * This method may be a useful alternative to creating a new

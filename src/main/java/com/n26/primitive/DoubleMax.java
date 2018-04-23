@@ -27,94 +27,95 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 
-public class LongMin extends N26Primitive implements Serializable {
 
-    /**
-     * Version of min for use in retryUpdate
-     */
+public class DoubleMax extends N26DoublePrimitive implements Serializable {
+
+
     @Override
-     protected long fn(long v, long x) {
-        return v < x ? v : x;
+    protected double fn(Double v, Double x) {
+        return v > x ? v : x;
+    }
+
+
+    public DoubleMax() {
+        base = -Double.MAX_VALUE;
     }
 
     /**
-     * Creates a new instance with initial minimum of {@code
-     * Long.MAX_VALUE}.
+     * Updates the maximum to be at least the given value.
+     *
+     * @param x the value to update
      */
-    public LongMin() {
-        base = Long.MAX_VALUE;
-    }
-
-    public void update(long x) {
+    public void update(Double x) {
         Cell[] as;
-        long b, v;
+        Double b, v;
         HashCode hc;
         Cell a;
         int n;
-        if ((as = cells) != null || (b = base) > x && !casBase(b, x)) {
+        if ((as = cells) != null || (b = base) < x && !casBase(b, x)) {
             boolean uncontended = true;
             int h = (hc = threadHashCode.get()).code;
             if (as == null || (n = as.length) < 1 ||
                     (a = as[(n - 1) & h]) == null ||
-                    ((v = a.value) > x && !(uncontended = a.cas(v, x))))
+                    ((v = a.value) < x && !(uncontended = a.cas(v, x))))
                 retryUpdate(x, hc, uncontended);
         }
     }
 
     /**
-     * Returns the current minimum.  The returned value is
+     * Returns the current maximum.  The returned value is
      * <em>NOT</em> an atomic snapshot: Invocation in the absence of
      * concurrent updates returns an accurate result, but concurrent
      * updates that occur while the value is being calculated might
      * not be incorporated.
      *
-     * @return the minimum
+     * @return the maximum
      */
     @Override
-    public long aggregate() {
+    public double aggregate() {
         Cell[] as = cells;
-        long min = base;
+        Double max = base;
         if (as != null) {
             int n = as.length;
-            long v;
+            Double v;
             for (int i = 0; i < n; ++i) {
                 Cell a = as[i];
-                if (a != null && (v = a.value) < min)
-                    min = v;
+                if (a != null && (v = a.value) > max)
+                    max = v;
             }
         }
-        return min;
+        return max;
     }
 
     @Override
     public void reset() {
-        internalReset(Long.MAX_VALUE);
+        internalReset(Double.MIN_VALUE);
     }
 
     @Override
-    public long getThenReset() {
+    public double getThenReset() {
         Cell[] as = cells;
-        long min = base;
-        base = Long.MAX_VALUE;
+        Double max = base;
+        base = Double.MIN_VALUE;
         if (as != null) {
             int n = as.length;
             for (int i = 0; i < n; ++i) {
                 Cell a = as[i];
                 if (a != null) {
-                    long v = a.value;
-                    a.value = Long.MAX_VALUE;
-                    if (v < min)
-                        min = v;
+                    Double v = a.value;
+                    a.value = Double.MIN_VALUE;
+                    if (v > max)
+                        max = v;
                 }
             }
         }
-        return min;
+        return max;
     }
 
     private void writeObject(java.io.ObjectOutputStream s)
             throws IOException {
         s.defaultWriteObject();
-        s.writeLong(aggregate());
+        s.writeDouble(aggregate());
     }
 
     private void readObject(ObjectInputStream s)
@@ -122,7 +123,7 @@ public class LongMin extends N26Primitive implements Serializable {
         s.defaultReadObject();
         busy = 0;
         cells = null;
-        base = s.readLong();
+        base = s.readDouble();
     }
 
 }
