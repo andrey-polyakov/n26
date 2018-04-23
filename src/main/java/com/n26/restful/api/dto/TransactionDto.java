@@ -1,7 +1,8 @@
 package com.n26.restful.api.dto;
 
 /**
- * Data transfer object for Transactions
+ * Data transfer object for Transactions for use in Rest
+ * @author Andrew Polyakov
  */
 public class TransactionDto {
 

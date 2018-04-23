@@ -3,7 +3,7 @@ package com.n26.primitive;
 import java.io.Serializable;
 
 /**
- * Basic primitive.
+ * Basic CAS(Compare & Set) primitive.
  */
 public abstract class N26DoublePrimitive extends Striped64 implements Serializable {
 

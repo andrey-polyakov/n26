@@ -15,6 +15,7 @@ import javax.ws.rs.core.Response;
 
 /**
  * API for other services to push transactions.
+ * @author Andrew Polyakov
  */
 @Component
 @Path("/transactions")

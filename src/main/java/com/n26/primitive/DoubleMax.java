@@ -93,21 +93,21 @@ public class DoubleMax extends N26DoublePrimitive implements Serializable {
 
     @Override
     public void reset() {
-        internalReset(Double.MIN_VALUE);
+        internalReset(-Double.MAX_VALUE);
     }
 
     @Override
     public double getThenReset() {
         Cell[] as = cells;
         Double max = base;
-        base = Double.MIN_VALUE;
+        base =  -Double.MAX_VALUE;
         if (as != null) {
             int n = as.length;
             for (int i = 0; i < n; ++i) {
                 Cell a = as[i];
                 if (a != null) {
                     Double v = a.value;
-                    a.value = Double.MIN_VALUE;
+                    a.value = -Double.MAX_VALUE;
                     if (v > max)
                         max = v;
                 }

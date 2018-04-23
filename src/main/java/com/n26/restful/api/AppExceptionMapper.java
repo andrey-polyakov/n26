@@ -7,6 +7,7 @@ import javax.ws.rs.ext.Provider;
 
 /**
  * Restful API error handler.
+ * @author Andrew Polyakov
  */
 @Provider
 public class AppExceptionMapper implements ExceptionMapper<Exception> {

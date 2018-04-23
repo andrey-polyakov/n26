@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 /**
  * Jersey general piping goes below.
  *
- * @author Andrew Polyakoc
+ * @author Andrew Polyakov
  */
 @Component
 public class JerseyConfig extends ResourceConfig {

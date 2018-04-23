@@ -28,7 +28,8 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
- * Primitive minimum value aggregator based on CAS. Based on LongMaxUpdater from Hystrix.
+ * Primitive minimum value aggregator based on CAS. The idea taken from
+ * LongMaxUpdater class from Hystrix framework.
  *
  * @author Andrew Polyakov
  */

@@ -2,6 +2,8 @@ package com.n26.restful.api.dto;
 
 /**
  * Data transfer objects for rolling statistics to be returned to the readers.
+ *
+ * @author Andrew Polyakov
  */
 public class StatisticsDto {
 
